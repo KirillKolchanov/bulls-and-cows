@@ -1,39 +1,70 @@
+import { getAttemptsCount, getElapsedMs } from './game.js';
 import type { GameSettings, GameState, RecordEntry, RecordsTable } from './types.js';
 
 export const RECORDS_LIMIT = 10;
 
-const notImplemented = (name: string): never => {
-  throw new Error(`${name} is not implemented`);
-};
-
 export const getRecordsKey = (settings: GameSettings): string =>
-  notImplemented(`getRecordsKey(${JSON.stringify(settings)})`);
+  `${String(settings.base)}:${String(settings.length)}`;
 
 export const compareRecords = (first: RecordEntry, second: RecordEntry): number =>
-  notImplemented(`compareRecords(${String(first.attempts)}, ${String(second.attempts)})`);
+  first.attempts - second.attempts || first.timeMs - second.timeMs;
 
 export const createRecordFromGame = (state: GameState): RecordEntry | null =>
-  notImplemented(`createRecordFromGame(${state.status})`);
+  state.status === 'won' && state.finishedAt !== null
+    ? {
+        attempts: getAttemptsCount(state),
+        timeMs: getElapsedMs(state, state.finishedAt),
+        achievedAt: state.finishedAt,
+      }
+    : null;
 
 export const insertRecord =
   (limit: number) =>
   (records: readonly RecordEntry[], entry: RecordEntry): readonly RecordEntry[] =>
-    notImplemented(
-      `insertRecord(${String(limit)})(${String(records.length)}, ${String(entry.attempts)})`,
-    );
+    [...records, entry].sort(compareRecords).slice(0, limit);
 
 export const getRecords = (table: RecordsTable, settings: GameSettings): readonly RecordEntry[] =>
-  notImplemented(`getRecords(${String(Object.keys(table).length)}, ${String(settings.base)})`);
+  table[getRecordsKey(settings)] ?? [];
 
 export const addRecordToTable = (
   table: RecordsTable,
   settings: GameSettings,
   entry: RecordEntry,
   limit: number = RECORDS_LIMIT,
-): RecordsTable =>
-  notImplemented(
-    `addRecordToTable(${String(Object.keys(table).length)}, ${String(settings.base)}, ${String(entry.attempts)}, ${String(limit)})`,
-  );
+): RecordsTable => ({
+  ...table,
+  [getRecordsKey(settings)]: insertRecord(limit)(getRecords(table, settings), entry),
+});
 
-export const parseRecordsTable = (raw: string | null): RecordsTable =>
-  notImplemented(`parseRecordsTable(${String(raw)})`);
+const isPlainObject = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isNonNegativeNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+const isRecordEntry = (value: unknown): value is RecordEntry =>
+  isPlainObject(value) &&
+  isNonNegativeNumber(value.attempts) &&
+  isNonNegativeNumber(value.timeMs) &&
+  isNonNegativeNumber(value.achievedAt);
+
+const safeJsonParse = (raw: string): unknown => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+export const parseRecordsTable = (raw: string | null): RecordsTable => {
+  const parsed = raw === null ? null : safeJsonParse(raw);
+
+  if (!isPlainObject(parsed)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(parsed)
+      .filter((pair): pair is [string, unknown[]] => Array.isArray(pair[1]))
+      .map(([key, entries]) => [key, entries.filter(isRecordEntry)]),
+  );
+};
