@@ -30,3 +30,11 @@ export interface GameState {
 }
 
 export type GuessError = 'invalid' | 'duplicate' | 'finished';
+
+export interface RecordEntry {
+  readonly attempts: number;
+  readonly timeMs: number;
+  readonly achievedAt: number;
+}
+
+export type RecordsTable = Readonly<Partial<Record<string, readonly RecordEntry[]>>>;
