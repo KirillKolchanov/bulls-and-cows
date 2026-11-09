@@ -15,13 +15,13 @@ export const DEFAULT_SETTINGS: GameSettings = { length: 4, base: 10 };
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
 
-const ALL_LENGTHS: readonly number[] = Array.from(
+export const SECRET_LENGTHS: readonly number[] = Array.from(
   { length: MAX_SECRET_LENGTH - MIN_SECRET_LENGTH + 1 },
   (_, offset) => MIN_SECRET_LENGTH + offset,
 );
 
 export const getAvailableLengths = (base: Base): readonly number[] =>
-  ALL_LENGTHS.filter((length) => length <= base);
+  SECRET_LENGTHS.filter((length) => length <= base);
 
 export const isLengthAvailable = (length: number, base: Base): boolean =>
   getAvailableLengths(base).includes(length);
