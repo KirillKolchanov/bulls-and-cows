@@ -6,3 +6,5 @@ export interface GuessResult {
   readonly bulls: number;
   readonly cows: number;
 }
+
+export type RandomSource = () => number;
