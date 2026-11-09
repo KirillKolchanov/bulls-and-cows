@@ -12,4 +12,4 @@ export const getDigitRangeLabel = (base: Base): string => {
 };
 
 export const getSettingsLabel = (settings: GameSettings): string =>
-  `${getBaseLabel(settings.base)} · ${String(settings.length)} digits`;
+  `${getBaseLabel(settings.base)}, ${String(settings.length)} digits`;

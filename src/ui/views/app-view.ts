@@ -13,23 +13,15 @@ export interface AppHandlers {
 }
 
 const renderHeader = (): HTMLElement =>
-  el('header', { className: 'header' }, [
-    el('h1', { className: 'header__title', text: 'Bulls & Cows' }),
-    el('p', { className: 'header__rules' }, [
-      'Guess the secret number made of unique digits. ',
-      el('strong', { text: 'Bulls' }),
-      ' — right digit in the right place, ',
-      el('strong', { text: 'cows' }),
-      ' — right digit in the wrong place.',
-    ]),
+  el('header', {}, [
+    el('h1', { text: 'Bulls and Cows' }),
+    el('p', {
+      text: 'Guess the secret number with unique digits. Bulls: right digit in the right place. Cows: right digit in the wrong place.',
+    }),
   ]);
 
 const renderSettingsScreen = (state: AppState, handlers: AppHandlers): readonly HTMLElement[] => {
-  const startButton = el('button', {
-    className: 'button button--primary button--wide',
-    text: 'Start game',
-    attrs: { type: 'button' },
-  });
+  const startButton = el('button', { text: 'Start game', attrs: { type: 'button' } });
   startButton.addEventListener('click', handlers.onStart);
 
   return [
@@ -38,7 +30,7 @@ const renderSettingsScreen = (state: AppState, handlers: AppHandlers): readonly 
       locked: false,
       onChange: handlers.onSettingsChange,
     }),
-    startButton,
+    el('p', {}, [startButton]),
     renderRecords({ records: state.records, settings: state.settings, latestRecord: null }),
   ];
 };
@@ -70,11 +62,11 @@ const renderGameScreen = (
 };
 
 export const renderApp = (state: AppState, handlers: AppHandlers, now: number): HTMLElement =>
-  el('div', { className: 'app' }, [
+  el('div', {}, [
     renderHeader(),
     el(
       'main',
-      { className: 'main' },
+      {},
       state.screen.kind === 'settings'
         ? renderSettingsScreen(state, handlers)
         : renderGameScreen(state, handlers, now),

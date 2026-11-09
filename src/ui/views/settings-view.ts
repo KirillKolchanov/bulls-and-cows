@@ -14,7 +14,6 @@ interface OptionProps {
   readonly name: string;
   readonly value: string;
   readonly label: string;
-  readonly hint: string;
   readonly checked: boolean;
   readonly disabled: boolean;
   readonly onSelect: () => void;
@@ -22,7 +21,6 @@ interface OptionProps {
 
 const renderOption = (props: OptionProps): HTMLLabelElement => {
   const input = el('input', {
-    className: 'option__input',
     attrs: {
       type: 'radio',
       name: props.name,
@@ -33,17 +31,8 @@ const renderOption = (props: OptionProps): HTMLLabelElement => {
   });
   input.addEventListener('change', props.onSelect);
 
-  return el('label', { className: 'option', attrs: { title: props.hint } }, [
-    input,
-    el('span', { className: 'option__label', text: props.label }),
-  ]);
+  return el('label', { className: props.disabled ? 'unavailable' : '' }, [input, props.label]);
 };
-
-const renderGroup = (title: string, options: readonly HTMLElement[]): HTMLElement =>
-  el('div', { className: 'settings__group', attrs: { role: 'radiogroup', 'aria-label': title } }, [
-    el('span', { className: 'settings__title', text: title }),
-    el('div', { className: 'options' }, options),
-  ]);
 
 export const renderSettings = ({
   settings,
@@ -55,7 +44,6 @@ export const renderSettings = ({
       name: 'base',
       value: String(base),
       label,
-      hint: `Base ${String(base)}, digits ${getDigitRangeLabel(base)}`,
       checked: settings.base === base,
       disabled: false,
       onSelect: () => {
@@ -64,35 +52,27 @@ export const renderSettings = ({
     }),
   );
 
-  const lengthOptions = SECRET_LENGTHS.map((length) => {
-    const available = isLengthAvailable(length, settings.base);
-
-    return renderOption({
+  const lengthOptions = SECRET_LENGTHS.map((length) =>
+    renderOption({
       name: 'length',
       value: String(length),
       label: String(length),
-      hint: available
-        ? `${String(length)} digits`
-        : `Not enough unique digits in base ${String(settings.base)}`,
       checked: settings.length === length,
-      disabled: !available,
+      disabled: !isLengthAvailable(length, settings.base),
       onSelect: () => {
         onChange({ ...settings, length });
       },
-    });
-  });
+    }),
+  );
 
-  const possibleSecrets = countPossibleSecrets(settings.length, settings.base);
-
-  return el('fieldset', { className: 'card settings', attrs: { disabled: locked } }, [
-    el('legend', { className: 'card__title', text: 'Settings' }),
-    renderGroup('Number system', baseOptions),
-    renderGroup('Secret length', lengthOptions),
+  return el('fieldset', { attrs: { disabled: locked } }, [
+    el('legend', { text: 'Settings' }),
+    el('p', {}, ['Number system: ', ...baseOptions]),
+    el('p', {}, ['Length: ', ...lengthOptions]),
     el('p', {
-      className: 'settings__note',
       text: locked
-        ? 'Settings are locked until you start a new game.'
-        : `${possibleSecrets.toLocaleString('en-US')} possible secrets with digits ${getDigitRangeLabel(settings.base)}.`,
+        ? 'Settings are locked until a new game.'
+        : `Digits ${getDigitRangeLabel(settings.base)}, possible secrets: ${String(countPossibleSecrets(settings.length, settings.base))}`,
     }),
   ]);
 };

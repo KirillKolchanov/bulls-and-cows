@@ -22,21 +22,12 @@ export const GUESS_INPUT_NAME = 'guess';
 const getErrorMessage = (error: GuessError, game: GameState, draft: string): string => {
   const { length, base } = game.settings;
   const messages: Readonly<Record<GuessError, string>> = {
-    invalid: `Enter ${String(length)} different digits from ${getDigitRangeLabel(base)}.`,
+    invalid: `Enter ${String(length)} different digits (${getDigitRangeLabel(base)}).`,
     duplicate: `You have already tried ${draft}.`,
-    finished: 'This round is over. Start a new game.',
+    finished: 'The game is over.',
   };
   return messages[error];
 };
-
-const formatAttempts = (count: number): string =>
-  `${String(count)} ${count === 1 ? 'attempt' : 'attempts'}`;
-
-const renderStat = (label: string, value: string, role?: string): HTMLElement =>
-  el('div', { className: 'stat' }, [
-    el('span', { className: 'stat__label', text: label }),
-    el('span', { className: 'stat__value', text: value, attrs: { 'data-role': role } }),
-  ]);
 
 const renderGuessInput = (game: GameState, draft: string): HTMLInputElement => {
   const { length, base } = game.settings;
@@ -44,18 +35,13 @@ const renderGuessInput = (game: GameState, draft: string): HTMLInputElement => {
   const sanitize = createInputSanitizer(base, length);
 
   const input = el('input', {
-    className: 'guess-form__input',
     attrs: {
       type: 'text',
       name: GUESS_INPUT_NAME,
       value: draft,
       maxlength: length,
-      inputmode: base <= 10 ? 'numeric' : 'text',
       autocomplete: 'off',
-      autocapitalize: 'off',
       spellcheck: 'false',
-      placeholder: '·'.repeat(length),
-      'aria-label': `Your guess, ${String(length)} digits`,
     },
   });
 
@@ -90,9 +76,10 @@ const renderGuessInput = (game: GameState, draft: string): HTMLInputElement => {
 
 const renderGuessForm = (screen: GameScreen, onGuess: (guess: string) => void): HTMLElement => {
   const input = renderGuessInput(screen.game, screen.draft);
-  const form = el('form', { className: 'guess-form', attrs: { novalidate: true } }, [
+  const form = el('form', { attrs: { novalidate: true } }, [
     input,
-    el('button', { className: 'button button--primary', text: 'Check', attrs: { type: 'submit' } }),
+    ' ',
+    el('button', { text: 'Check', attrs: { type: 'submit' } }),
   ]);
 
   form.addEventListener('submit', (event) => {
@@ -103,66 +90,45 @@ const renderGuessForm = (screen: GameScreen, onGuess: (guess: string) => void): 
   return form;
 };
 
-const renderHistoryRow = (entry: GuessEntry, index: number, length: number): HTMLElement =>
-  el('tr', { className: entry.bulls === length ? 'history__row--win' : '' }, [
-    el('td', { text: String(index + 1) }),
-    el('td', { className: 'history__guess', text: entry.guess }),
-    el('td', { className: 'history__bulls', text: String(entry.bulls) }),
-    el('td', { className: 'history__cows', text: String(entry.cows) }),
-  ]);
-
-const renderHistory = (game: GameState): HTMLElement =>
-  game.history.length === 0
-    ? el('p', { className: 'empty', text: 'No attempts yet. Make your first guess!' })
-    : el('table', { className: 'table history' }, [
-        el('thead', {}, [
-          el('tr', {}, [
-            el('th', { text: '#' }),
-            el('th', { text: 'Guess' }),
-            el('th', { text: 'Bulls' }),
-            el('th', { text: 'Cows' }),
-          ]),
+const renderHistory = (history: readonly GuessEntry[]): HTMLElement =>
+  history.length === 0
+    ? el('p', { text: 'No attempts yet.' })
+    : el('table', {}, [
+        el('tr', {}, [
+          el('th', { text: '#' }),
+          el('th', { text: 'Guess' }),
+          el('th', { text: 'Bulls' }),
+          el('th', { text: 'Cows' }),
         ]),
-        el(
-          'tbody',
-          {},
-          game.history.map((entry, index) => renderHistoryRow(entry, index, game.settings.length)),
+        ...history.map((entry, index) =>
+          el('tr', {}, [
+            el('td', { text: String(index + 1) }),
+            el('td', { text: entry.guess.toUpperCase() }),
+            el('td', { text: String(entry.bulls) }),
+            el('td', { text: String(entry.cows) }),
+          ]),
         ),
       ]);
 
-const renderWinBanner = (game: GameState, now: number): HTMLElement =>
-  el('div', { className: 'banner', attrs: { role: 'status' } }, [
-    el('strong', { text: `You cracked ${game.secret}!` }),
-    el('span', {
-      text: ` ${formatAttempts(getAttemptsCount(game))} in ${formatDuration(getElapsedMs(game, now))}.`,
-    }),
-  ]);
-
 export const renderGame = ({ screen, now, onGuess, onNewGame }: GameViewOptions): HTMLElement => {
   const { game, error, draft } = screen;
-  const newGameButton = el('button', {
-    className: game.status === 'won' ? 'button button--primary' : 'button',
-    text: 'New game',
-    attrs: { type: 'button' },
-  });
+  const isWon = game.status === 'won';
+  const newGameButton = el('button', { text: 'New game', attrs: { type: 'button' } });
   newGameButton.addEventListener('click', onNewGame);
 
-  return el('section', { className: 'card game' }, [
-    el('div', { className: 'game__header' }, [
-      el('h2', { className: 'card__title', text: 'Game' }),
-      el('div', { className: 'stats' }, [
-        renderStat('Attempts', String(getAttemptsCount(game))),
-        renderStat('Time', formatDuration(getElapsedMs(game, now)), TIMER_ROLE),
-      ]),
-    ]),
-    game.status === 'won' ? renderWinBanner(game, now) : renderGuessForm(screen, onGuess),
-    error !== null &&
-      el('p', {
-        className: 'error',
-        text: getErrorMessage(error, game, draft),
-        attrs: { role: 'alert' },
+  return el('section', {}, [
+    el('p', {}, [
+      `Attempts: ${String(getAttemptsCount(game))}, time: `,
+      el('span', {
+        text: formatDuration(getElapsedMs(game, now)),
+        attrs: { 'data-role': TIMER_ROLE },
       }),
-    renderHistory(game),
-    el('div', { className: 'actions' }, [newGameButton]),
+    ]),
+    isWon
+      ? el('p', {}, [el('b', { text: `You won! The number was ${game.secret.toUpperCase()}.` })])
+      : renderGuessForm(screen, onGuess),
+    error !== null && el('p', { className: 'error', text: getErrorMessage(error, game, draft) }),
+    renderHistory(game.history),
+    el('p', {}, [newGameButton]),
   ]);
 };
