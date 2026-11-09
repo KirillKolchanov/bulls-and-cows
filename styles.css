@@ -1,0 +1,44 @@
+body {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 0 16px;
+  font-family: Arial, sans-serif;
+}
+
+fieldset,
+section {
+  margin-bottom: 16px;
+}
+
+label {
+  margin-right: 10px;
+}
+
+input[name='guess'] {
+  width: 8em;
+  font-family: monospace;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+}
+
+.error {
+  color: #c00;
+}
+
+.highlight {
+  background: #ffffcc;
+}
+
+.unavailable {
+  color: #aaa;
+}
