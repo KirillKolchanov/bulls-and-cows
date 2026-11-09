@@ -8,3 +8,8 @@ export interface GuessResult {
 }
 
 export type RandomSource = () => number;
+
+export interface GameSettings {
+  readonly length: number;
+  readonly base: Base;
+}
